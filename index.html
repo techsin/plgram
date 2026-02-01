@@ -1,0 +1,2397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLGram - Your Trading Edge, Visualized | P&L for Schwab Traders</title>
+    <meta name="description" content="See your profit & loss beautifully. Discover when you trade best. Connect with trading friends. Built for thinkorswim traders.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-primary: #050507;
+            --bg-secondary: #0A0A0F;
+            --bg-card: #111116;
+            --bg-card-hover: #16161D;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-medium: rgba(255, 255, 255, 0.1);
+            
+            --text-primary: #FAFAFA;
+            --text-secondary: #A1A1AA;
+            --text-tertiary: #71717A;
+            
+            --accent-cyan: #00D4FF;
+            --accent-cyan-glow: rgba(0, 212, 255, 0.15);
+            --accent-cyan-soft: rgba(0, 212, 255, 0.08);
+            
+            --profit-green: #22C55E;
+            --profit-green-soft: rgba(34, 197, 94, 0.15);
+            --loss-red: #EF4444;
+            --loss-red-soft: rgba(239, 68, 68, 0.15);
+            
+            --font-display: 'Instrument Sans', sans-serif;
+            --font-body: 'DM Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Utility Classes */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes fade-in-up {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes scale-in {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes number-tick {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
+        }
+
+        .animate-fade-in {
+            animation: fade-in-up 0.8s ease-out forwards;
+            opacity: 0;
+        }
+
+        .animate-delay-1 { animation-delay: 0.1s; }
+        .animate-delay-2 { animation-delay: 0.2s; }
+        .animate-delay-3 { animation-delay: 0.3s; }
+        .animate-delay-4 { animation-delay: 0.4s; }
+        .animate-delay-5 { animation-delay: 0.5s; }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 16px 0;
+            background: rgba(5, 5, 7, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            transition: all 0.3s ease;
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 22px;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-cyan), #0066FF);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 10px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), #0088FF);
+            color: #000;
+            box-shadow: 0 0 30px var(--accent-cyan-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-medium);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent-cyan);
+        }
+
+        .btn-large {
+            padding: 16px 32px;
+            font-size: 16px;
+            border-radius: 12px;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 120px 0 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, var(--accent-cyan-soft), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(0, 102, 255, 0.08), transparent),
+                radial-gradient(ellipse 50% 30% at 20% 80%, rgba(139, 92, 246, 0.05), transparent);
+            pointer-events: none;
+        }
+
+        .hero-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(var(--border-subtle) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse 70% 50% at 50% 30%, black, transparent);
+            pointer-events: none;
+        }
+
+        .hero .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-content {
+            max-width: 560px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            border-radius: 100px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .hero-badge-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--profit-green);
+            border-radius: 50%;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(40px, 5vw, 58px);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--accent-cyan), #0088FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-description {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            line-height: 1.7;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 40px;
+        }
+
+        .hero-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .hero-stat-value {
+            font-family: var(--font-mono);
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .hero-stat-label {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        /* Hero Visual - Calendar Preview */
+        .hero-visual {
+            position: relative;
+            perspective: 1000px;
+        }
+
+        .calendar-preview {
+            background: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                0 0 0 1px var(--border-subtle) inset;
+            animation: float 6s ease-in-out infinite;
+            transform: rotateY(-5deg) rotateX(5deg);
+            transition: transform 0.3s ease;
+        }
+
+        .calendar-preview:hover {
+            transform: rotateY(0deg) rotateX(0deg);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .calendar-month {
+            font-family: var(--font-display);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .calendar-nav button {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-nav button:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .calendar-weekday {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .calendar-day:hover {
+            transform: scale(1.05);
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            cursor: default;
+        }
+
+        .calendar-day.empty:hover {
+            transform: none;
+        }
+
+        .calendar-day.profit {
+            background: var(--profit-green-soft);
+            color: var(--profit-green);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .calendar-day.loss {
+            background: var(--loss-red-soft);
+            color: var(--loss-red);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .calendar-day.neutral {
+            background: var(--bg-secondary);
+            color: var(--text-tertiary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .calendar-day.today {
+            box-shadow: 0 0 0 2px var(--accent-cyan);
+        }
+
+        .calendar-day-pnl {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            margin-top: 2px;
+            opacity: 0.8;
+        }
+
+        .calendar-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .calendar-summary-item {
+            text-align: center;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+        }
+
+        .calendar-summary-value {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .calendar-summary-value.profit {
+            color: var(--profit-green);
+        }
+
+        .calendar-summary-value.loss {
+            color: var(--loss-red);
+        }
+
+        .calendar-summary-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+
+        /* Floating Elements */
+        .floating-card {
+            position: absolute;
+            background: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            border-radius: 12px;
+            padding: 14px 18px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            animation: float 5s ease-in-out infinite;
+        }
+
+        .floating-card-1 {
+            top: -20px;
+            right: -40px;
+            animation-delay: -1s;
+        }
+
+        .floating-card-2 {
+            bottom: 40px;
+            left: -60px;
+            animation-delay: -2.5s;
+        }
+
+        .floating-pnl {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .floating-pnl-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .floating-pnl-icon.profit {
+            background: var(--profit-green-soft);
+            color: var(--profit-green);
+        }
+
+        .floating-pnl-icon.loss {
+            background: var(--loss-red-soft);
+            color: var(--loss-red);
+        }
+
+        .floating-pnl-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .floating-pnl-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .floating-pnl-value {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .floating-pnl-value.profit {
+            color: var(--profit-green);
+        }
+
+        /* Social Proof Bar */
+        .social-proof {
+            padding: 40px 0;
+            border-top: 1px solid var(--border-subtle);
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--bg-secondary);
+        }
+
+        .social-proof .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 60px;
+            flex-wrap: wrap;
+        }
+
+        .proof-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .proof-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-cyan);
+        }
+
+        .proof-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .proof-value {
+            font-family: var(--font-mono);
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .proof-label {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 120px 0;
+            position: relative;
+        }
+
+        .features-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, var(--accent-cyan-soft), transparent 70%);
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 80px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-size: clamp(32px, 4vw, 44px);
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 16px;
+        }
+
+        .section-description {
+            font-size: 18px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 32px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--border-medium);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--accent-cyan-soft), rgba(0, 102, 255, 0.1));
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            color: var(--accent-cyan);
+            font-size: 24px;
+        }
+
+        .feature-title {
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .feature-description {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .feature-visual {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: auto;
+        }
+
+        /* Feature 1: Calendar Visual */
+        .mini-calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .mini-calendar-day {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mini-calendar-day.profit {
+            background: var(--profit-green-soft);
+        }
+
+        .mini-calendar-day.loss {
+            background: var(--loss-red-soft);
+        }
+
+        .mini-calendar-day.neutral {
+            background: var(--bg-card);
+        }
+
+        /* Feature 2: Analytics Visual */
+        .analytics-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .analytics-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .analytics-bar-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            width: 60px;
+            flex-shrink: 0;
+        }
+
+        .analytics-bar-track {
+            flex: 1;
+            height: 8px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .analytics-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .analytics-bar-fill.profit {
+            background: linear-gradient(90deg, var(--profit-green), #4ADE80);
+        }
+
+        .analytics-bar-value {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--profit-green);
+            width: 50px;
+            text-align: right;
+        }
+
+        /* Feature 3: Social Visual */
+        .social-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .social-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: var(--bg-card);
+            border-radius: 8px;
+        }
+
+        .social-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-cyan), #0066FF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .social-user-info {
+            flex: 1;
+        }
+
+        .social-user-name {
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .social-user-status {
+            font-size: 10px;
+            color: var(--text-tertiary);
+        }
+
+        .social-user-pnl {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .social-user-pnl.profit {
+            color: var(--profit-green);
+        }
+
+        .social-user-pnl.loss {
+            color: var(--loss-red);
+        }
+
+        /* Product Showcase */
+        .showcase {
+            padding: 120px 0;
+            background: var(--bg-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .showcase-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 50% 50% at 20% 20%, var(--accent-cyan-soft), transparent),
+                radial-gradient(ellipse 40% 40% at 80% 80%, rgba(139, 92, 246, 0.05), transparent);
+            pointer-events: none;
+        }
+
+        .showcase-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .dashboard-preview {
+            background: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 
+                0 50px 100px -20px rgba(0, 0, 0, 0.5),
+                0 0 0 1px var(--border-subtle) inset;
+            margin-top: 60px;
+        }
+
+        .dashboard-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .dashboard-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dashboard-dot.red { background: #FF5F57; }
+        .dashboard-dot.yellow { background: #FEBC2E; }
+        .dashboard-dot.green { background: #28C840; }
+
+        .dashboard-title {
+            flex: 1;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        .dashboard-body {
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 24px;
+            min-height: 500px;
+        }
+
+        .dashboard-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sidebar-nav {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .sidebar-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-nav-item:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .sidebar-nav-item.active {
+            background: var(--accent-cyan-soft);
+            color: var(--accent-cyan);
+        }
+
+        .sidebar-nav-icon {
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .sidebar-card-title {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .sidebar-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .sidebar-stat:last-child {
+            border-bottom: none;
+        }
+
+        .sidebar-stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .sidebar-stat-value {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .sidebar-stat-value.profit { color: var(--profit-green); }
+        .sidebar-stat-value.loss { color: var(--loss-red); }
+
+        .dashboard-main {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .dashboard-main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dashboard-main-title {
+            font-family: var(--font-display);
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .dashboard-period-selector {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-secondary);
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .period-btn {
+            padding: 8px 16px;
+            font-size: 13px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .period-btn.active {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .dashboard-chart {
+            flex: 1;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-area {
+            flex: 1;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            padding-top: 20px;
+        }
+
+        .chart-bar {
+            flex: 1;
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .chart-bar.profit {
+            background: linear-gradient(180deg, var(--profit-green), rgba(34, 197, 94, 0.3));
+        }
+
+        .chart-bar.loss {
+            background: linear-gradient(180deg, var(--loss-red), rgba(239, 68, 68, 0.3));
+        }
+
+        .chart-bar:hover {
+            opacity: 0.8;
+            transform: scaleY(1.02);
+            transform-origin: bottom;
+        }
+
+        .chart-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .chart-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 120px 0;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 60px;
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+        }
+
+        .step::after {
+            content: '';
+            position: absolute;
+            top: 40px;
+            right: -20px;
+            width: 40px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--border-medium), transparent);
+        }
+
+        .step:last-child::after {
+            display: none;
+        }
+
+        .step-number {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, var(--accent-cyan-soft), rgba(0, 102, 255, 0.1));
+            border: 2px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .step-title {
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .step-description {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Testimonials */
+        .testimonials {
+            padding: 120px 0;
+            background: var(--bg-secondary);
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-top: 60px;
+        }
+
+        .testimonial-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 28px;
+            transition: all 0.3s ease;
+        }
+
+        .testimonial-card:hover {
+            border-color: var(--border-medium);
+            transform: translateY(-4px);
+        }
+
+        .testimonial-stars {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+            color: #FBBF24;
+        }
+
+        .testimonial-text {
+            font-size: 15px;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .testimonial-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-cyan), #0066FF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .testimonial-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .testimonial-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .testimonial-role {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        /* Pricing */
+        .pricing {
+            padding: 120px 0;
+            position: relative;
+        }
+
+        .pricing-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-cyan-soft), transparent 70%);
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            max-width: 800px;
+            margin: 60px auto 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .pricing-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 36px;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-card.featured {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 60px var(--accent-cyan-glow);
+            position: relative;
+        }
+
+        .pricing-card.featured::before {
+            content: 'MOST POPULAR';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--accent-cyan), #0088FF);
+            color: #000;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            padding: 6px 16px;
+            border-radius: 100px;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .pricing-name {
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .pricing-description {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            margin-bottom: 24px;
+        }
+
+        .pricing-price {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            margin-bottom: 24px;
+        }
+
+        .pricing-currency {
+            font-size: 20px;
+            color: var(--text-secondary);
+        }
+
+        .pricing-amount {
+            font-family: var(--font-mono);
+            font-size: 48px;
+            font-weight: 700;
+        }
+
+        .pricing-period {
+            font-size: 14px;
+            color: var(--text-tertiary);
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 28px;
+        }
+
+        .pricing-features li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .pricing-features li::before {
+            content: '✓';
+            width: 20px;
+            height: 20px;
+            background: var(--profit-green-soft);
+            color: var(--profit-green);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .pricing-card .btn {
+            width: 100%;
+        }
+
+        /* Final CTA */
+        .final-cta {
+            padding: 120px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .final-cta-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 60% 50% at 50% 50%, var(--accent-cyan-soft), transparent);
+            pointer-events: none;
+        }
+
+        .final-cta-content {
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .final-cta h2 {
+            font-family: var(--font-display);
+            font-size: clamp(32px, 4vw, 44px);
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .final-cta p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        .final-cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        /* Footer */
+        footer {
+            padding: 60px 0 30px;
+            border-top: 1px solid var(--border-subtle);
+            background: var(--bg-secondary);
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 40px;
+        }
+
+        .footer-brand {
+            max-width: 280px;
+        }
+
+        .footer-brand .logo {
+            margin-bottom: 16px;
+        }
+
+        .footer-brand p {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            line-height: 1.7;
+        }
+
+        .footer-column h4 {
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+        }
+
+        .footer-column ul {
+            list-style: none;
+        }
+
+        .footer-column li {
+            margin-bottom: 10px;
+        }
+
+        .footer-column a {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .footer-column a:hover {
+            color: var(--text-primary);
+        }
+
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 30px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .footer-bottom p {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        .footer-socials {
+            display: flex;
+            gap: 16px;
+        }
+
+        .footer-socials a {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .footer-socials a:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+            border-color: var(--accent-cyan);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero .container {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-content {
+                max-width: 100%;
+            }
+
+            .hero-cta {
+                justify-content: center;
+            }
+
+            .hero-stats {
+                justify-content: center;
+            }
+
+            .hero-visual {
+                max-width: 500px;
+                margin: 0 auto;
+            }
+
+            .floating-card {
+                display: none;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+                margin: 0 auto;
+            }
+
+            .dashboard-body {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-sidebar {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .sidebar-nav,
+            .sidebar-card {
+                flex: 1;
+                min-width: 200px;
+            }
+
+            .steps {
+                grid-template-columns: 1fr;
+                max-width: 400px;
+                margin: 60px auto 0;
+            }
+
+            .step::after {
+                display: none;
+            }
+
+            .testimonials-grid {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+                margin: 60px auto 0;
+            }
+
+            .pricing-cards {
+                grid-template-columns: 1fr;
+                max-width: 400px;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero-cta {
+                flex-direction: column;
+            }
+
+            .hero-stats {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .final-cta-buttons {
+                flex-direction: column;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+        }
+
+        /* Scroll Animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <a href="#" class="logo">
+                <div class="logo-icon">P</div>
+                PLGram
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#" class="btn btn-secondary">Log In</a></li>
+                <li><a href="#" class="btn btn-primary">Get Started Free</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-grid"></div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge animate-fade-in">
+                    <span class="hero-badge-dot"></span>
+                    Built for thinkorswim traders
+                </div>
+                <h1 class="animate-fade-in animate-delay-1">
+                    Know Your Numbers.<br>
+                    <span>Find Your Edge.</span>
+                </h1>
+                <p class="hero-description animate-fade-in animate-delay-2">
+                    See your Schwab P&L beautifully visualized. Discover when you trade best. 
+                    Connect with your trading circle. All in one place.
+                </p>
+                <div class="hero-cta animate-fade-in animate-delay-3">
+                    <a href="#" class="btn btn-primary btn-large">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                            <polyline points="10 17 15 12 10 7"/>
+                            <line x1="15" y1="12" x2="3" y2="12"/>
+                        </svg>
+                        Connect Schwab — Free
+                    </a>
+                    <a href="#features" class="btn btn-secondary btn-large">
+                        See How It Works
+                    </a>
+                </div>
+                <div class="hero-stats animate-fade-in animate-delay-4">
+                    <div class="hero-stat">
+                        <span class="hero-stat-value">12,847</span>
+                        <span class="hero-stat-label">Active Traders</span>
+                    </div>
+                    <div class="hero-stat">
+                        <span class="hero-stat-value">$2.4B+</span>
+                        <span class="hero-stat-label">Trades Tracked</span>
+                    </div>
+                    <div class="hero-stat">
+                        <span class="hero-stat-value">4.9★</span>
+                        <span class="hero-stat-label">User Rating</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual animate-fade-in animate-delay-3">
+                <div class="floating-card floating-card-1">
+                    <div class="floating-pnl">
+                        <div class="floating-pnl-icon profit">↑</div>
+                        <div class="floating-pnl-content">
+                            <span class="floating-pnl-label">Today's P/L</span>
+                            <span class="floating-pnl-value profit">+$1,247.50</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="floating-card floating-card-2">
+                    <div class="floating-pnl">
+                        <div class="floating-pnl-icon profit">📊</div>
+                        <div class="floating-pnl-content">
+                            <span class="floating-pnl-label">Win Rate</span>
+                            <span class="floating-pnl-value">68.5%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="calendar-preview">
+                    <div class="calendar-header">
+                        <span class="calendar-month">January 2026</span>
+                        <div class="calendar-nav">
+                            <button>←</button>
+                            <button>→</button>
+                        </div>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <span class="calendar-weekday">Sun</span>
+                        <span class="calendar-weekday">Mon</span>
+                        <span class="calendar-weekday">Tue</span>
+                        <span class="calendar-weekday">Wed</span>
+                        <span class="calendar-weekday">Thu</span>
+                        <span class="calendar-weekday">Fri</span>
+                        <span class="calendar-weekday">Sat</span>
+                    </div>
+                    <div class="calendar-days">
+                        <div class="calendar-day empty"></div>
+                        <div class="calendar-day empty"></div>
+                        <div class="calendar-day empty"></div>
+                        <div class="calendar-day profit">1<span class="calendar-day-pnl">+$342</span></div>
+                        <div class="calendar-day profit">2<span class="calendar-day-pnl">+$567</span></div>
+                        <div class="calendar-day loss">3<span class="calendar-day-pnl">-$123</span></div>
+                        <div class="calendar-day neutral">4</div>
+                        <div class="calendar-day neutral">5</div>
+                        <div class="calendar-day profit">6<span class="calendar-day-pnl">+$892</span></div>
+                        <div class="calendar-day profit">7<span class="calendar-day-pnl">+$234</span></div>
+                        <div class="calendar-day loss">8<span class="calendar-day-pnl">-$456</span></div>
+                        <div class="calendar-day profit">9<span class="calendar-day-pnl">+$678</span></div>
+                        <div class="calendar-day profit">10<span class="calendar-day-pnl">+$445</span></div>
+                        <div class="calendar-day neutral">11</div>
+                        <div class="calendar-day neutral">12</div>
+                        <div class="calendar-day profit">13<span class="calendar-day-pnl">+$1.2k</span></div>
+                        <div class="calendar-day loss">14<span class="calendar-day-pnl">-$234</span></div>
+                        <div class="calendar-day profit">15<span class="calendar-day-pnl">+$567</span></div>
+                        <div class="calendar-day profit">16<span class="calendar-day-pnl">+$890</span></div>
+                        <div class="calendar-day profit">17<span class="calendar-day-pnl">+$123</span></div>
+                        <div class="calendar-day neutral">18</div>
+                        <div class="calendar-day neutral">19</div>
+                        <div class="calendar-day loss">20<span class="calendar-day-pnl">-$345</span></div>
+                        <div class="calendar-day profit">21<span class="calendar-day-pnl">+$678</span></div>
+                        <div class="calendar-day profit">22<span class="calendar-day-pnl">+$234</span></div>
+                        <div class="calendar-day profit">23<span class="calendar-day-pnl">+$456</span></div>
+                        <div class="calendar-day profit today">24<span class="calendar-day-pnl">+$789</span></div>
+                        <div class="calendar-day neutral">25</div>
+                        <div class="calendar-day neutral">26</div>
+                        <div class="calendar-day neutral">27</div>
+                        <div class="calendar-day neutral">28</div>
+                        <div class="calendar-day neutral">29</div>
+                        <div class="calendar-day neutral">30</div>
+                        <div class="calendar-day neutral">31</div>
+                    </div>
+                    <div class="calendar-summary">
+                        <div class="calendar-summary-item">
+                            <div class="calendar-summary-value profit">+$6,812</div>
+                            <div class="calendar-summary-label">Month P/L</div>
+                        </div>
+                        <div class="calendar-summary-item">
+                            <div class="calendar-summary-value">14/17</div>
+                            <div class="calendar-summary-label">Win Days</div>
+                        </div>
+                        <div class="calendar-summary-item">
+                            <div class="calendar-summary-value profit">82%</div>
+                            <div class="calendar-summary-label">Win Rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Social Proof Bar -->
+    <section class="social-proof">
+        <div class="container">
+            <div class="proof-item">
+                <div class="proof-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div class="proof-content">
+                    <span class="proof-value">12,847</span>
+                    <span class="proof-label">Active traders</span>
+                </div>
+            </div>
+            <div class="proof-item">
+                <div class="proof-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                        <polyline points="17 6 23 6 23 12"/>
+                    </svg>
+                </div>
+                <div class="proof-content">
+                    <span class="proof-value">847K+</span>
+                    <span class="proof-label">Trades analyzed</span>
+                </div>
+            </div>
+            <div class="proof-item">
+                <div class="proof-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                </div>
+                <div class="proof-content">
+                    <span class="proof-value">60 sec</span>
+                    <span class="proof-label">Setup time</span>
+                </div>
+            </div>
+            <div class="proof-item">
+                <div class="proof-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <div class="proof-content">
+                    <span class="proof-value">Bank-level</span>
+                    <span class="proof-label">Security</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="features-bg"></div>
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-label">✦ Core Features</span>
+                <h2 class="section-title">Three things you'll actually use. Every single day.</h2>
+                <p class="section-description">
+                    We obsessed over what matters. No bloat. No complexity. 
+                    Just the tools that move the needle for your trading.
+                </p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card reveal">
+                    <div class="feature-icon">📅</div>
+                    <h3 class="feature-title">Your P/L Calendar</h3>
+                    <p class="feature-description">
+                        See every trading day at a glance. Green days, red days, patterns emerge. 
+                        No more digging through Schwab's clunky reports.
+                    </p>
+                    <div class="feature-visual">
+                        <div class="mini-calendar">
+                            <div class="mini-calendar-day profit"></div>
+                            <div class="mini-calendar-day profit"></div>
+                            <div class="mini-calendar-day loss"></div>
+                            <div class="mini-calendar-day profit"></div>
+                            <div class="mini-calendar-day profit"></div>
+                            <div class="mini-calendar-day neutral"></div>
+                            <div class="mini-calendar-day neutral"></div>
+                            <div class="mini-calendar-day profit"></div>
+                            <div class="mini-calendar-day loss"></div>
+                            <div class="mini-calendar-day profit"></div>
+                            <div class="mini-calendar-day profit"></div>
+                            <div class="mini-calendar-day profit"></div>
+                            <div class="mini-calendar-day neutral"></div>
+                            <div class="mini-calendar-day neutral"></div>
+                            <div class="mini-calendar-day loss"></div>
+                            <div class="mini-calendar-day profit"></div>
+                            <div class="mini-calendar-day profit"></div>
+                            <div class="mini-calendar-day profit"></div>
+                            <div class="mini-calendar-day loss"></div>
+                            <div class="mini-calendar-day neutral"></div>
+                            <div class="mini-calendar-day neutral"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">🎯</div>
+                    <h3 class="feature-title">Find Your Edge</h3>
+                    <p class="feature-description">
+                        Discover when you're sharpest. Best hours, days, position sizes, hold times. 
+                        Your data reveals patterns you never knew existed.
+                    </p>
+                    <div class="feature-visual">
+                        <div class="analytics-preview">
+                            <div class="analytics-bar">
+                                <span class="analytics-bar-label">9-10 AM</span>
+                                <div class="analytics-bar-track">
+                                    <div class="analytics-bar-fill profit" style="width: 85%"></div>
+                                </div>
+                                <span class="analytics-bar-value">+$4.2k</span>
+                            </div>
+                            <div class="analytics-bar">
+                                <span class="analytics-bar-label">10-11 AM</span>
+                                <div class="analytics-bar-track">
+                                    <div class="analytics-bar-fill profit" style="width: 62%"></div>
+                                </div>
+                                <span class="analytics-bar-value">+$2.8k</span>
+                            </div>
+                            <div class="analytics-bar">
+                                <span class="analytics-bar-label">2-3 PM</span>
+                                <div class="analytics-bar-track">
+                                    <div class="analytics-bar-fill profit" style="width: 45%"></div>
+                                </div>
+                                <span class="analytics-bar-value">+$1.9k</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">👥</div>
+                    <h3 class="feature-title">Trade With Your Circle</h3>
+                    <p class="feature-description">
+                        Follow friends. Share your calendar. Build accountability. 
+                        Trading doesn't have to be lonely anymore.
+                    </p>
+                    <div class="feature-visual">
+                        <div class="social-preview">
+                            <div class="social-user">
+                                <div class="social-avatar">MK</div>
+                                <div class="social-user-info">
+                                    <span class="social-user-name">Mike K.</span>
+                                    <span class="social-user-status">14 day streak 🔥</span>
+                                </div>
+                                <span class="social-user-pnl profit">+$892</span>
+                            </div>
+                            <div class="social-user">
+                                <div class="social-avatar">JL</div>
+                                <div class="social-user-info">
+                                    <span class="social-user-name">Jessica L.</span>
+                                    <span class="social-user-status">Active now</span>
+                                </div>
+                                <span class="social-user-pnl profit">+$1.2k</span>
+                            </div>
+                            <div class="social-user">
+                                <div class="social-avatar">TR</div>
+                                <div class="social-user-info">
+                                    <span class="social-user-name">Tom R.</span>
+                                    <span class="social-user-status">7 day streak</span>
+                                </div>
+                                <span class="social-user-pnl loss">-$234</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Showcase -->
+    <section class="showcase">
+        <div class="showcase-bg"></div>
+        <div class="container">
+            <div class="showcase-content">
+                <div class="section-header reveal">
+                    <span class="section-label">✦ Full Dashboard</span>
+                    <h2 class="section-title">Everything you need. Nothing you don't.</h2>
+                    <p class="section-description">
+                        A clean, powerful dashboard that gives you complete control over your trading data.
+                    </p>
+                </div>
+                <div class="dashboard-preview reveal">
+                    <div class="dashboard-header">
+                        <span class="dashboard-dot red"></span>
+                        <span class="dashboard-dot yellow"></span>
+                        <span class="dashboard-dot green"></span>
+                        <span class="dashboard-title">PLGram — Dashboard</span>
+                    </div>
+                    <div class="dashboard-body">
+                        <div class="dashboard-sidebar">
+                            <div class="sidebar-nav">
+                                <div class="sidebar-nav-item active">
+                                    <span class="sidebar-nav-icon">📊</span>
+                                    Dashboard
+                                </div>
+                                <div class="sidebar-nav-item">
+                                    <span class="sidebar-nav-icon">📅</span>
+                                    Calendar
+                                </div>
+                                <div class="sidebar-nav-item">
+                                    <span class="sidebar-nav-icon">🎯</span>
+                                    Analytics
+                                </div>
+                                <div class="sidebar-nav-item">
+                                    <span class="sidebar-nav-icon">👥</span>
+                                    Circle
+                                </div>
+                                <div class="sidebar-nav-item">
+                                    <span class="sidebar-nav-icon">📋</span>
+                                    Trades
+                                </div>
+                            </div>
+                            <div class="sidebar-card">
+                                <h4 class="sidebar-card-title">This Month</h4>
+                                <div class="sidebar-stat">
+                                    <span class="sidebar-stat-label">Net P/L</span>
+                                    <span class="sidebar-stat-value profit">+$6,812.45</span>
+                                </div>
+                                <div class="sidebar-stat">
+                                    <span class="sidebar-stat-label">Win Rate</span>
+                                    <span class="sidebar-stat-value">68.5%</span>
+                                </div>
+                                <div class="sidebar-stat">
+                                    <span class="sidebar-stat-label">Avg Win</span>
+                                    <span class="sidebar-stat-value profit">+$487.20</span>
+                                </div>
+                                <div class="sidebar-stat">
+                                    <span class="sidebar-stat-label">Avg Loss</span>
+                                    <span class="sidebar-stat-value loss">-$234.50</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dashboard-main">
+                            <div class="dashboard-main-header">
+                                <h3 class="dashboard-main-title">Performance Overview</h3>
+                                <div class="dashboard-period-selector">
+                                    <button class="period-btn">1W</button>
+                                    <button class="period-btn active">1M</button>
+                                    <button class="period-btn">3M</button>
+                                    <button class="period-btn">YTD</button>
+                                </div>
+                            </div>
+                            <div class="dashboard-chart">
+                                <div class="chart-area">
+                                    <div class="chart-bar profit" style="height: 45%"></div>
+                                    <div class="chart-bar profit" style="height: 65%"></div>
+                                    <div class="chart-bar loss" style="height: 25%"></div>
+                                    <div class="chart-bar profit" style="height: 80%"></div>
+                                    <div class="chart-bar profit" style="height: 55%"></div>
+                                    <div class="chart-bar loss" style="height: 35%"></div>
+                                    <div class="chart-bar profit" style="height: 70%"></div>
+                                    <div class="chart-bar profit" style="height: 60%"></div>
+                                    <div class="chart-bar profit" style="height: 90%"></div>
+                                    <div class="chart-bar loss" style="height: 20%"></div>
+                                    <div class="chart-bar profit" style="height: 75%"></div>
+                                    <div class="chart-bar profit" style="height: 50%"></div>
+                                    <div class="chart-bar profit" style="height: 85%"></div>
+                                    <div class="chart-bar loss" style="height: 30%"></div>
+                                    <div class="chart-bar profit" style="height: 65%"></div>
+                                    <div class="chart-bar profit" style="height: 95%"></div>
+                                    <div class="chart-bar profit" style="height: 70%"></div>
+                                    <div class="chart-bar loss" style="height: 40%"></div>
+                                    <div class="chart-bar profit" style="height: 60%"></div>
+                                    <div class="chart-bar profit" style="height: 75%"></div>
+                                </div>
+                                <div class="chart-labels">
+                                    <span class="chart-label">Jan 1</span>
+                                    <span class="chart-label">Jan 7</span>
+                                    <span class="chart-label">Jan 14</span>
+                                    <span class="chart-label">Jan 21</span>
+                                    <span class="chart-label">Jan 24</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-label">✦ How It Works</span>
+                <h2 class="section-title">Up and running in 60 seconds</h2>
+                <p class="section-description">
+                    No complicated setup. No manual imports. Just connect and go.
+                </p>
+            </div>
+            <div class="steps">
+                <div class="step reveal">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">Connect Schwab</h3>
+                    <p class="step-description">
+                        Secure OAuth connection to your thinkorswim account. 
+                        We never see your password.
+                    </p>
+                </div>
+                <div class="step reveal">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">Import History</h3>
+                    <p class="step-description">
+                        Your trades sync automatically. Past history imports in minutes. 
+                        Updates in real-time.
+                    </p>
+                </div>
+                <div class="step reveal">
+                    <div class="step-number">3</div>
+                    <h3 class="step-title">Find Your Edge</h3>
+                    <p class="step-description">
+                        Explore your calendar, dive into analytics, 
+                        and start trading smarter today.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-label">✦ Testimonials</span>
+                <h2 class="section-title">Traders love PLGram</h2>
+                <p class="section-description">
+                    Join thousands of traders who've transformed how they track performance.
+                </p>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card reveal">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">
+                        "Finally, a P/L tracker that doesn't suck. The calendar view alone is worth it. 
+                        I check this every morning before market open."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">JM</div>
+                        <div class="testimonial-info">
+                            <span class="testimonial-name">Jake M.</span>
+                            <span class="testimonial-role">Day Trader, 3 years</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card reveal">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">
+                        "The analytics showed me I was losing money every Monday morning. 
+                        Changed my strategy, now I'm up 23% this month."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">SR</div>
+                        <div class="testimonial-info">
+                            <span class="testimonial-name">Sarah R.</span>
+                            <span class="testimonial-role">Options Trader</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card reveal">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">
+                        "Following my trading buddy keeps me accountable. 
+                        We compare calendars daily. Best feature hands down."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">DK</div>
+                        <div class="testimonial-info">
+                            <span class="testimonial-name">David K.</span>
+                            <span class="testimonial-role">Swing Trader</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="pricing" id="pricing">
+        <div class="pricing-bg"></div>
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-label">✦ Pricing</span>
+                <h2 class="section-title">Simple, transparent pricing</h2>
+                <p class="section-description">
+                    Start free. Upgrade when you need more.
+                </p>
+            </div>
+            <div class="pricing-cards">
+                <div class="pricing-card reveal">
+                    <h3 class="pricing-name">Starter</h3>
+                    <p class="pricing-description">Perfect for getting started</p>
+                    <div class="pricing-price">
+                        <span class="pricing-currency">$</span>
+                        <span class="pricing-amount">0</span>
+                        <span class="pricing-period">/forever</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>P/L Calendar view</li>
+                        <li>Last 30 days history</li>
+                        <li>Basic analytics</li>
+                        <li>Mobile access</li>
+                    </ul>
+                    <a href="#" class="btn btn-secondary btn-large">Get Started Free</a>
+                </div>
+                <div class="pricing-card featured reveal">
+                    <h3 class="pricing-name">Pro</h3>
+                    <p class="pricing-description">For serious traders</p>
+                    <div class="pricing-price">
+                        <span class="pricing-currency">$</span>
+                        <span class="pricing-amount">19</span>
+                        <span class="pricing-period">/month</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>Everything in Starter</li>
+                        <li>Unlimited history</li>
+                        <li>Advanced analytics & patterns</li>
+                        <li>Social features & circles</li>
+                        <li>Export reports</li>
+                        <li>Priority support</li>
+                    </ul>
+                    <a href="#" class="btn btn-primary btn-large">Start 14-Day Free Trial</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="final-cta">
+        <div class="final-cta-bg"></div>
+        <div class="final-cta-content reveal">
+            <h2>Ready to find your edge?</h2>
+            <p>
+                Join 12,847 traders who've taken control of their P/L tracking. 
+                Connect your Schwab account in 60 seconds.
+            </p>
+            <div class="final-cta-buttons">
+                <a href="#" class="btn btn-primary btn-large">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                        <polyline points="10 17 15 12 10 7"/>
+                        <line x1="15" y1="12" x2="3" y2="12"/>
+                    </svg>
+                    Connect Schwab — Free
+                </a>
+                <a href="#" class="btn btn-secondary btn-large">Schedule a Demo</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="#" class="logo">
+                        <div class="logo-icon">P</div>
+                        PLGram
+                    </a>
+                    <p>
+                        The P/L tracker built for serious thinkorswim traders. 
+                        See your edge. Trade smarter.
+                    </p>
+                </div>
+                <div class="footer-column">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#">Features</a></li>
+                        <li><a href="#">Pricing</a></li>
+                        <li><a href="#">Changelog</a></li>
+                        <li><a href="#">Roadmap</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#">About</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Privacy</a></li>
+                        <li><a href="#">Terms</a></li>
+                        <li><a href="#">Security</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 PLGram. All rights reserved. Not affiliated with Charles Schwab.</p>
+                <div class="footer-socials">
+                    <a href="#">𝕏</a>
+                    <a href="#">in</a>
+                    <a href="#">▶</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Scroll reveal animation
+        function reveal() {
+            const reveals = document.querySelectorAll('.reveal');
+            
+            reveals.forEach(element => {
+                const windowHeight = window.innerHeight;
+                const elementTop = element.getBoundingClientRect().top;
+                const elementVisible = 150;
+                
+                if (elementTop < windowHeight - elementVisible) {
+                    element.classList.add('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', reveal);
+        reveal(); // Check on load
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Nav background on scroll
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.style.background = 'rgba(5, 5, 7, 0.95)';
+            } else {
+                nav.style.background = 'rgba(5, 5, 7, 0.8)';
+            }
+        });
+
+        // Animate numbers on load
+        function animateValue(element, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const value = Math.floor(progress * (end - start) + start);
+                element.textContent = value.toLocaleString();
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // Calendar day hover effect
+        document.querySelectorAll('.calendar-day:not(.empty):not(.neutral)').forEach(day => {
+            day.addEventListener('mouseenter', () => {
+                day.style.transform = 'scale(1.1)';
+                day.style.zIndex = '10';
+            });
+            day.addEventListener('mouseleave', () => {
+                day.style.transform = 'scale(1)';
+                day.style.zIndex = '1';
+            });
+        });
+    </script>
+</body>
+</html>
